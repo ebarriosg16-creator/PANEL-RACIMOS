@@ -1,0 +1,355 @@
+---
+// Panel de Control Completo - Contador de Racimos con Arduino
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Panel de Control | Contador de Racimos</title>
+		<style>
+			:root {
+				--bg-color: #0f172a;
+				--card-bg: #1e293b;
+				--accent: #10b981;
+				--accent-hover: #059669;
+				--text-main: #f8fafc;
+				--text-muted: #94a3b8;
+				--danger: #ef4444;
+				--danger-hover: #dc2626;
+			}
+			body {
+				font-family: system-ui, -apple-system, sans-serif;
+				background-color: var(--bg-color);
+				color: var(--text-main);
+				margin: 0;
+				padding: 2rem;
+			}
+			.container {
+				max-width: 900px;
+				margin: 0 auto;
+			}
+			header {
+				text-align: center;
+				margin-bottom: 2rem;
+			}
+			header h1 {
+				margin: 0;
+				font-size: 2.2rem;
+				color: var(--accent);
+			}
+			header p {
+				color: var(--text-muted);
+				margin-top: 0.5rem;
+			}
+			.counter-display {
+				background-color: #090d16;
+				border: 1px solid var(--accent);
+				border-radius: 8px;
+				padding: 1rem;
+				text-align: center;
+				font-size: 2rem;
+				font-weight: bold;
+				color: var(--accent);
+				margin-bottom: 1.5rem;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+				gap: 1rem;
+				margin-bottom: 2rem;
+			}
+			.card {
+				background-color: var(--card-bg);
+				border-radius: 12px;
+				padding: 1.5rem;
+				box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+				border: 1px solid rgba(255, 255, 255, 0.05);
+				transition: transform 0.2s, border-color 0.2s;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+			.card:hover {
+				transform: translateY(-3px);
+				border-color: var(--accent);
+			}
+			.card h3 {
+				margin-top: 0;
+				font-size: 1.1rem;
+				color: var(--text-main);
+			}
+			.card p {
+				font-size: 0.85rem;
+				color: var(--text-muted);
+				margin-bottom: 1.2rem;
+			}
+			button {
+				background-color: var(--accent);
+				color: white;
+				border: none;
+				padding: 0.6rem 1rem;
+				border-radius: 6px;
+				font-weight: bold;
+				cursor: pointer;
+				transition: background-color 0.2s;
+				width: 100%;
+			}
+			button:hover {
+				background-color: var(--accent-hover);
+			}
+			button.danger {
+				background-color: var(--danger);
+			}
+			button.danger:hover {
+				background-color: var(--danger-hover);
+			}
+			.console-box {
+				background-color: #090d16;
+				border: 1px solid #334155;
+				border-radius: 8px;
+				padding: 1rem;
+				font-family: monospace;
+				color: #38bdf8;
+				height: 160px;
+				overflow-y: auto;
+				font-size: 0.9rem;
+			}
+			.console-title {
+				font-weight: bold;
+				margin-bottom: 0.5rem;
+				color: var(--text-muted);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<h1>Contador de Racimos</h1>
+				<p>Panel de Accesos Directos - Puerto Serie USB (Arduino / Pico)</p>
+			</header>
+
+			<!-- Display principal -->
+			<div class="counter-display" id="conteoActual">
+				Conteo actual: 0
+			</div>
+
+			<div class="grid">
+				<!-- Opción 1 -->
+				<div class="card">
+					<div>
+						<h3>1. Leer de Arduino</h3>
+						<p>Conecta al puerto USB/COM3 para recibir datos físicos del sensor.</p>
+					</div>
+					<button id="btnConectar">Conectar USB</button>
+				</div>
+
+				<!-- Opción 2 -->
+				<div class="card">
+					<div>
+						<h3>2. Simular Datos</h3>
+						<p>Crea registros falsos de prueba sin tener la placa conectada.</p>
+					</div>
+					<button onclick="simularDatos()">Simular</button>
+				</div>
+
+				<!-- Opción 3 -->
+				<div class="card">
+					<div>
+						<h3>3. Ver Registros</h3>
+						<p>Muestra en pantalla la lista actual de lecturas en memoria.</p>
+					</div>
+					<button onclick="verRegistros()">Mostrar</button>
+				</div>
+
+				<!-- Opción 4 -->
+				<div class="card">
+					<div>
+						<h3>4. Ordenar Datos</h3>
+						<p>Organiza los registros de menor a mayor en la consola.</p>
+					</div>
+					<button onclick="ordenarDatos()">Ordenar</button>
+				</div>
+
+				<!-- Opción 5 -->
+				<div class="card">
+					<div>
+						<h3>5. Buscar Conteo</h3>
+						<p>Busca si existe un valor exacto en el historial registrado.</p>
+					</div>
+					<button onclick="buscarConteo()">Buscar</button>
+				</div>
+
+				<!-- Opción 6 -->
+				<div class="card">
+					<div>
+						<h3>6. Guardar</h3>
+						<p>Descarga los datos recopilados en un archivo <code>datos.dat</code> cifrado.</p>
+					</div>
+					<button onclick="guardarCifrado()">Guardar</button>
+				</div>
+
+				<!-- Opción 7 -->
+				<div class="card">
+					<div>
+						<h3>7. Exportar a Texto</h3>
+						<p>Genera y descarga un reporte legible en <code>reporte.txt</code>.</p>
+					</div>
+					<button onclick="exportarTexto()">Exportar</button>
+				</div>
+
+				<!-- Opción 8 -->
+				<div class="card">
+					<div>
+						<h3>8. Borrar Todo</h3>
+						<p>Elimina permanentemente el historial y reinicia el contador a cero.</p>
+					</div>
+					<button class="danger" onclick="borrarTodo()">Borrar Todo</button>
+				</div>
+			</div>
+
+			<div>
+				<div class="console-title">ESTADO DE LA CONSOLA (Visualizador)</div>
+				<div id="console" class="console-box">
+					> Sistema Astro iniciado correctamente.<br>
+					> Haz clic en "Conectar USB" para enlazar con tu Arduino o usa las herramientas del panel.
+				</div>
+			</div>
+		</div>
+
+		<script>
+			let historial = [];
+			let conteoTotal = 0;
+			let port, reader;
+
+			const consoleBox = document.getElementById('console');
+			const displayConteo = document.getElementById('conteoActual');
+			const btnConectar = document.getElementById('btnConectar');
+
+			function logConsole(msg) {
+				const time = new Date().toLocaleTimeString();
+				consoleBox.innerHTML += `<br>[${time}] ${msg}`;
+				consoleBox.scrollTop = consoleBox.scrollHeight;
+			}
+
+			// 1. Conexión USB real con Arduino
+			btnConectar.addEventListener('click', async () => {
+				if (!("serial" in navigator)) {
+					alert("Tu navegador no soporta Web Serial API. Usa Google Chrome o Microsoft Edge.");
+					return;
+				}
+				try {
+					port = await navigator.serial.requestPort();
+					await port.open({ baudRate: 9600 });
+					logConsole("¡Conexión establecida con Arduino!");
+					btnConectar.textContent = "Conectado";
+					btnConectar.style.backgroundColor = "#059669";
+
+					const textDecoder = new TextDecoderStream();
+					port.readable.pipeTo(textDecoder.writable);
+					reader = textDecoder.readable.getReader();
+
+					while (true) {
+						const { value, done } = await reader.read();
+						if (done) break;
+						if (value) {
+							let val = value.trim();
+							let num = parseInt(val);
+							if (!isNaN(num)) {
+								conteoTotal = num;
+								historial.push(conteoTotal);
+								displayConteo.textContent = `Conteo actual: ${conteoTotal}`;
+								logConsole(`Lectura física de Arduino: ${conteoTotal}`);
+							}
+						}
+					}
+				} catch (e) {
+					logConsole("Error o conexión cancelada: " + e);
+				}
+			});
+
+			// 2. Simular Datos
+			function simularDatos() {
+				conteoTotal += Math.floor(Math.random() * 3) + 1;
+				historial.push(conteoTotal);
+				displayConteo.textContent = `Conteo actual: ${conteoTotal}`;
+				logConsole(`[Simulador] Nuevo racimo detectado. Conteo actual: ${conteoTotal}`);
+			}
+
+			// 3. Ver Registros
+			function verRegistros() {
+				if (historial.length === 0) {
+					logConsole("No hay registros almacenados en memoria.");
+				} else {
+					logConsole(`Historial de conteos: [${historial.join(', ')}]`);
+				}
+			}
+
+			// 4. Ordenar Datos
+			function ordenarDatos() {
+				if (historial.length === 0) {
+					logConsole("Nada que ordenar. El historial está vacío.");
+					return;
+				}
+				historial.sort((a, b) => a - b);
+				logConsole(`Registros ordenados de menor a mayor: [${historial.join(', ')}]`);
+			}
+
+			// 5. Buscar Conteo
+			function buscarConteo() {
+				let busqueda = prompt("Ingresa el número de conteo a buscar:");
+				if (busqueda !== null) {
+					let num = parseInt(busqueda);
+					if (historial.includes(num)) {
+						logConsole(`¡Coincidencia encontrada! El valor ${num} sí existe en el registro.`);
+					} else {
+						logConsole(`El valor ${num} NO fue encontrado en el historial.`);
+					}
+				}
+			}
+
+			// 6. Guardar cifrado (datos.dat)
+			function guardarCifrado() {
+				let dataStr = "DATOS_RACIMOS:" + historial.join(',');
+				// Aplicar XOR básico
+				let cifrado = "";
+				for (let i = 0; i < dataStr.length; i++) {
+					cifrado += String.fromCharCode(dataStr.charCodeAt(i) ^ 0x5A);
+				}
+				let blob = new Blob([cifrado], { type: 'application/octet-stream' });
+				let a = document.createElement('a');
+				a.href = URL.createObjectURL(blob);
+				a.download = 'datos.dat';
+				a.click();
+				logConsole("Archivo cifrado 'datos.dat' generado y descargado correctamente.");
+			}
+
+			// 7. Exportar reporte a texto (reporte.txt)
+			function exportarTexto() {
+				let txt = `REPORTE DE CONTEO DE RACIMOS\n===========================\n`;
+				txt += `Fecha: ${new Date().toLocaleString()}\n`;
+				txt += `Total de registros: ${historial.length}\n`;
+				txt += `Último conteo: ${conteoTotal}\n\n`;
+				txt += `Historial detallado:\n` + historial.map((v, i) => `Lectura #${i+1}: ${v}`).join('\n');
+
+				let blob = new Blob([txt], { type: 'text/plain' });
+				let a = document.createElement('a');
+				a.href = URL.createObjectURL(blob);
+				a.download = 'reporte.txt';
+				a.click();
+				logConsole("Reporte ejecutable 'reporte.txt' exportado correctamente.");
+			}
+
+			// 8. Borrar Todo
+			function borrarTodo() {
+				if (confirm("¿Estás seguro de reiniciar todos los datos?")) {
+					historial = [];
+					conteoTotal = 0;
+					displayConteo.textContent = `Conteo actual: 0`;
+					logConsole("¡Memoria e historial reiniciados a cero!");
+				}
+			}
+		</script>
+	</body>
+</html>
